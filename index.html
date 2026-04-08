@@ -3,66 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - MojosariFood</title>
+    <title>Admin - LocalFood</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .btn-loading { opacity: 0.7; pointer-events: none; position: relative; }
+        .btn-loading::after { content: "..."; }
+    </style>
 </head>
 <body class="bg-gray-100 p-4 pb-20 max-w-xl mx-auto">
     <h1 class="text-2xl font-black mb-6 text-green-700 uppercase tracking-tighter">Admin Dashboard</h1>
 
     <!-- Nav Admin -->
     <div class="flex gap-2 mb-6 overflow-x-auto text-[10px] font-bold">
-        <button onclick="showTab('toko')" class="bg-white px-4 py-2 rounded-lg shadow-sm">MERCHANT</button>
-        <button onclick="showTab('menu')" class="bg-white px-4 py-2 rounded-lg shadow-sm">MENU</button>
-        <button onclick="showTab('set')" class="bg-white px-4 py-2 rounded-lg shadow-sm">SETTINGS</button>
+        <button onclick="showTab('toko')" class="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">MERCHANT</button>
+        <button onclick="showTab('menu')" class="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">MENU</button>
+        <button onclick="showTab('set')" class="bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200">SETTINGS</button>
     </div>
 
     <!-- Tab Merchant -->
     <div id="tab-toko" class="space-y-6">
-        <div class="bg-white p-4 rounded-2xl shadow-sm space-y-3">
-            <h2 class="font-bold border-b pb-2">Tambah Merchant</h2>
-            <input id="m-nama" type="text" placeholder="Nama Merchant" class="w-full p-2 border rounded text-sm">
-            <input id="m-foto" type="text" placeholder="URL Banner" class="w-full p-2 border rounded text-sm">
+        <div class="bg-white p-4 rounded-2xl shadow-sm space-y-3 border border-gray-100">
+            <h2 class="font-bold border-b pb-2 text-gray-700">Tambah Merchant</h2>
+            <input id="m-nama" type="text" placeholder="Nama Merchant" class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-green-500 outline-none">
+            <input id="m-foto" type="text" placeholder="URL Banner" class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-green-500 outline-none">
             <div class="flex gap-2">
                 <input id="m-lat" type="text" placeholder="Lat" class="flex-1 p-2 border rounded bg-gray-50 text-xs" readonly>
                 <input id="m-lng" type="text" placeholder="Lng" class="flex-1 p-2 border rounded bg-gray-50 text-xs" readonly>
-                <button onclick="getGPS()" class="bg-blue-600 text-white px-4 rounded text-xs">AMBIL LOKASI</button>
+                <button onclick="getGPS()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded text-xs transition">AMBIL LOKASI</button>
             </div>
-            <button onclick="addM()" class="w-full bg-green-600 text-white py-2 rounded font-bold">Simpan</button>
+            <button id="btn-save-m" onclick="addM()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition shadow-md">Simpan Merchant</button>
         </div>
-        <div id="list-admin-m" class="space-y-2"></div>
+        
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+            <h2 class="font-bold border-b pb-2 mb-4 text-gray-700">Daftar Merchant & Status</h2>
+            <div id="list-admin-m" class="space-y-2">
+                <p class="text-center text-xs text-gray-400 py-4">Memuat daftar...</p>
+            </div>
+        </div>
     </div>
 
     <!-- Tab Menu -->
-    <div id="tab-menu" class="hidden bg-white p-4 rounded-2xl shadow-sm space-y-3">
-        <h2 class="font-bold border-b pb-2">Tambah Menu Makanan</h2>
-        <select id="sel-m" class="w-full p-2 border rounded text-sm"></select>
-        <input id="f-nama" type="text" placeholder="Nama Menu" class="w-full p-2 border rounded text-sm">
-        <input id="f-harga" type="number" placeholder="Harga" class="w-full p-2 border rounded text-sm">
-        <input id="f-foto" type="text" placeholder="URL Foto" class="w-full p-2 border rounded text-sm">
-        <textarea id="f-desc" placeholder="Deskripsi" class="w-full p-2 border rounded text-sm"></textarea>
-        <button onclick="addF()" class="w-full bg-green-600 text-white py-2 rounded font-bold">Tambah Menu</button>
+    <div id="tab-menu" class="hidden space-y-4">
+        <div class="bg-white p-4 rounded-2xl shadow-sm space-y-3 border border-gray-100">
+            <h2 class="font-bold border-b pb-2 text-gray-700">Tambah Menu Makanan</h2>
+            <select id="sel-m" class="w-full p-2 border rounded text-sm outline-none focus:ring-2 focus:ring-green-500"></select>
+            <input id="f-nama" type="text" placeholder="Nama Menu" class="w-full p-2 border rounded text-sm outline-none focus:ring-2 focus:ring-green-500">
+            <input id="f-harga" type="number" placeholder="Harga (Angka saja)" class="w-full p-2 border rounded text-sm outline-none focus:ring-2 focus:ring-green-500">
+            <input id="f-foto" type="text" placeholder="URL Foto" class="w-full p-2 border rounded text-sm outline-none focus:ring-2 focus:ring-green-500">
+            <textarea id="f-desc" placeholder="Deskripsi (Opsional)" class="w-full p-2 border rounded text-sm outline-none focus:ring-2 focus:ring-green-500"></textarea>
+            <button id="btn-save-f" onclick="addF()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition shadow-md">Tambah Menu</button>
+        </div>
     </div>
 
     <!-- Tab Settings -->
-    <div id="tab-set" class="hidden bg-white p-4 rounded-2xl shadow-sm space-y-3">
-        <h2 class="font-bold border-b pb-2">E-Wallet & QRIS</h2>
-        <input id="s-ew" type="text" placeholder="Nomor E-Wallet" class="w-full p-2 border rounded text-sm">
-        <input id="s-qr" type="text" placeholder="URL Foto QRIS" class="w-full p-2 border rounded text-sm">
-        <button onclick="saveS()" class="w-full bg-purple-600 text-white py-2 rounded font-bold">Simpan Settings</button>
+    <div id="tab-set" class="hidden space-y-4">
+        <div class="bg-white p-4 rounded-2xl shadow-sm space-y-3 border border-gray-100">
+            <h2 class="font-bold border-b pb-2 text-gray-700">E-Wallet & QRIS</h2>
+            <label class="text-[10px] uppercase text-gray-400 font-bold">Informasi Pembayaran (DANA/OVO/Gopay)</label>
+            <input id="s-ew" type="text" placeholder="Contoh: 0821... (DANA)" class="w-full p-2 border rounded text-sm outline-none focus:ring-2 focus:ring-purple-500">
+            <label class="text-[10px] uppercase text-gray-400 font-bold">Link URL Gambar QRIS</label>
+            <input id="s-qr" type="text" placeholder="URL Foto QRIS" class="w-full p-2 border rounded text-sm outline-none focus:ring-2 focus:ring-purple-500">
+            <button id="btn-save-s" onclick="saveS()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold transition shadow-md">Simpan Settings</button>
+        </div>
     </div>
 
     <script>
-        const API_URL = 'https://script.google.com/macros/library/d/1pTGiw69HyG5ucLWMtx27CFyUOr8Xl_8ETTKX95yF1Azb1uZfYqzCyr3C/2'; // GANTI DENGAN URL GAS ANDA
+        /** * PENTING: Gunakan URL Web App (akhiran /exec)
+         * BUKAN URL Library atau Editor
+         */
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyQsx6SOaU-TK9vnMnp0Id9IY9PU2ZdLp4LqPmLMEVRYQMI_QBaJ9j_3pyd6ohs-TKXqw/exec'; 
         let merchants = [];
 
-        window.onload = () => load();
+        window.onload = () => {
+            if (API_URL.includes('GANTI_DENGAN_URL')) {
+                alert("Peringatan: Anda belum memasukkan API_URL yang benar di kode script!");
+            }
+            load();
+        };
 
         async function load() {
-            const r = await fetch(`${API_URL}?action=get_all`);
-            const d = await r.json();
-            merchants = d.merchants;
-            render();
+            try {
+                const r = await fetch(`${API_URL}?action=get_all`);
+                if (!r.ok) throw new Error('Network response was not ok');
+                const d = await r.json();
+                merchants = d.merchants || [];
+                render();
+            } catch (err) {
+                console.error("Load Error:", err);
+                document.getElementById('list-admin-m').innerHTML = `<p class="text-center text-red-500 text-xs py-4">Gagal memuat data. Periksa CORS/URL.</p>`;
+            }
         }
 
         function showTab(t) {
@@ -71,55 +101,129 @@
         }
 
         function getGPS() {
+            if (!navigator.geolocation) return alert("Browser tidak mendukung GPS");
             navigator.geolocation.getCurrentPosition(p => {
                 document.getElementById('m-lat').value = p.coords.latitude;
                 document.getElementById('m-lng').value = p.coords.longitude;
-                alert("GPS Terkunci!");
+                alert("📍 Lokasi GPS Berhasil Diambil!");
+            }, (err) => {
+                alert("Gagal mengambil lokasi. Pastikan izin lokasi aktif.");
             });
         }
 
-        async function render() {
-            document.getElementById('list-admin-m').innerHTML = merchants.map(m => `
-                <div class="bg-white p-3 rounded-xl flex justify-between items-center shadow-sm">
-                    <span class="font-bold text-sm">${m.Nama}</span>
-                    <button onclick="upStat('${m.ID}', '${m.Status === 'Buka' ? 'Tutup' : 'Buka'}')" 
-                        class="px-4 py-1 rounded-full text-white text-[10px] font-bold ${m.Status==='Buka'?'bg-green-500':'bg-red-500'}">
-                        ${m.Status}
-                    </button>
-                </div>`).join('');
+        function render() {
+            const listContainer = document.getElementById('list-admin-m');
+            if (merchants.length === 0) {
+                listContainer.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Belum ada merchant.</p>`;
+            } else {
+                listContainer.innerHTML = merchants.map(m => `
+                    <div class="bg-gray-50 p-3 rounded-xl flex justify-between items-center border border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-[10px] font-bold">
+                                ${m.Nama.charAt(0)}
+                            </div>
+                            <span class="font-bold text-xs text-gray-700">${m.Nama}</span>
+                        </div>
+                        <button onclick="upStat('${m.ID}', '${m.Status === 'Buka' ? 'Tutup' : 'Buka'}')" 
+                            class="px-4 py-1.5 rounded-full text-white text-[10px] font-bold shadow-sm transition active:scale-95 ${m.Status==='Buka'?'bg-green-500 hover:bg-green-600':'bg-red-500 hover:bg-red-600'}">
+                            ${m.Status.toUpperCase()}
+                        </button>
+                    </div>`).join('');
+            }
             
             document.getElementById('sel-m').innerHTML = merchants.map(m => `<option value="${m.ID}">${m.Nama}</option>`).join('');
         }
 
         async function addM() {
+            const btn = document.getElementById('btn-save-m');
             const n = document.getElementById('m-nama').value;
             const f = document.getElementById('m-foto').value;
             const la = document.getElementById('m-lat').value;
             const ln = document.getElementById('m-lng').value;
-            await fetch(`${API_URL}?action=add_merchant&nama=${n}&foto=${f}&lat=${la}&lng=${ln}`);
-            alert("Berhasil!"); load();
+            
+            if (!n || !la) return alert("Nama dan Lokasi wajib diisi!");
+
+            btn.classList.add('btn-loading');
+            try {
+                const params = new URLSearchParams({
+                    action: 'add_merchant',
+                    nama: n,
+                    foto: f,
+                    lat: la,
+                    lng: ln
+                });
+                const res = await fetch(`${API_URL}?${params.toString()}`);
+                if (!res.ok) throw new Error('Fetch failed');
+                alert("✅ Merchant Berhasil Disimpan!");
+                document.getElementById('m-nama').value = '';
+                document.getElementById('m-foto').value = '';
+                load();
+            } catch (err) {
+                alert("❌ Gagal menyimpan merchant. Pastikan URL Web App benar.");
+            } finally {
+                btn.classList.remove('btn-loading');
+            }
         }
 
         async function upStat(id, s) {
-            await fetch(`${API_URL}?action=update_status&id=${id}&status=${s}`);
-            load();
+            try {
+                await fetch(`${API_URL}?action=update_status&id=${id}&status=${s}`);
+                load();
+            } catch (err) {
+                alert("Gagal mengubah status.");
+            }
         }
 
         async function addF() {
+            const btn = document.getElementById('btn-save-f');
             const mId = document.getElementById('sel-m').value;
             const n = document.getElementById('f-nama').value;
             const h = document.getElementById('f-harga').value;
             const f = document.getElementById('f-foto').value;
             const d = document.getElementById('f-desc').value;
-            await fetch(`${API_URL}?action=add_menu&mId=${mId}&nama=${n}&harga=${h}&foto=${f}&desc=${d}`);
-            alert("Menu ditambahkan!");
+
+            if (!mId || !n || !h) return alert("Pilih Merchant, Nama Menu, dan Harga!");
+
+            btn.classList.add('btn-loading');
+            try {
+                const params = new URLSearchParams({
+                    action: 'add_menu',
+                    mId: mId,
+                    nama: n,
+                    harga: h,
+                    foto: f,
+                    desc: d
+                });
+                await fetch(`${API_URL}?${params.toString()}`);
+                alert("✅ Menu Berhasil Ditambahkan!");
+                document.getElementById('f-nama').value = '';
+                document.getElementById('f-harga').value = '';
+            } catch (err) {
+                alert("Gagal menambah menu.");
+            } finally {
+                btn.classList.remove('btn-loading');
+            }
         }
 
         async function saveS() {
+            const btn = document.getElementById('btn-save-s');
             const ew = document.getElementById('s-ew').value;
             const qr = document.getElementById('s-qr').value;
-            await fetch(`${API_URL}?action=save_settings&ew=${ew}&qr=${qr}`);
-            alert("Settings disimpan!");
+
+            btn.classList.add('btn-loading');
+            try {
+                const params = new URLSearchParams({
+                    action: 'save_settings',
+                    ew: ew,
+                    qr: qr
+                });
+                await fetch(`${API_URL}?${params.toString()}`);
+                alert("✅ Pengaturan Pembayaran Berhasil Disimpan!");
+            } catch (err) {
+                alert("Gagal menyimpan pengaturan.");
+            } finally {
+                btn.classList.remove('btn-loading');
+            }
         }
     </script>
 </body>
