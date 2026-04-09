@@ -184,6 +184,27 @@
             background: #94a3b8;
         }
     </style>
+    <script>
+// CORS Proxy fallback
+const USE_PROXY = false; // Set true jika CORS masih error
+const PROXY_URL = 'https://cors-anywhere.herokuapp.com/'; // atau proxy Anda sendiri
+
+async function fetchWithCors(url, options = {}) {
+  try {
+    // Coba direct dulu
+    const response = await fetch(url, options);
+    return response;
+  } catch (err) {
+    if (USE_PROXY && err.message.includes('CORS')) {
+      // Fallback ke proxy
+      const proxyUrl = PROXY_URL + url;
+      return await fetch(proxyUrl, options);
+    }
+    throw err;
+  }
+}
+</script>
+
 </head>
 <body class="pb-24 max-w-xl mx-auto">
     
