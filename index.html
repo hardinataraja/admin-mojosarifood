@@ -648,54 +648,72 @@ async function fetchWithCors(url, options = {}) {
         }
 
         async function addM() {
-            const btn = document.getElementById('btn-save-m');
-            const n = document.getElementById('m-nama').value.trim();
-            const f = document.getElementById('m-foto').value.trim();
-            const la = document.getElementById('m-lat').value;
-            const ln = document.getElementById('m-lng').value;
-            
-            if (!n) {
-                showToast('Nama merchant wajib diisi!', 'error');
-                document.getElementById('m-nama').focus();
-                return;
-            }
-            if (!la || !ln) {
-                showToast('Lokasi GPS wajib diisi! Klik tombol GPS', 'error');
-                return;
-            }
+    const btn = document.getElementById('btn-save-m');
+    const n = document.getElementById('m-nama').value.trim();
+    const f = document.getElementById('m-foto').value.trim();
+    const la = document.getElementById('m-lat').value;
+    const ln = document.getElementById('m-lng').value;
+    
+    console.log('Input values:', { n, f, la, ln }); // DEBUG
+    
+    if (!n) {
+        showToast('Nama merchant wajib diisi!', 'error');
+        return;
+    }
+    if (!la || !ln) {
+        showToast('Lokasi GPS wajib diisi!', 'error');
+        return;
+    }
 
-            btn.classList.add('btn-loading');
-            try {
-                const params = new URLSearchParams({
-                    action: 'add_merchant',
-                    nama: n,
-                    foto: f,
-                    lat: la,
-                    lng: ln
-                });
-                
-                const res = await fetch(`${API_URL}?${params.toString()}`);
-                if (!res.ok) throw new Error('Fetch failed');
-                
-                const result = await res.json();
-                
-                showToast('✅ Merchant berhasil disimpan!');
-                
-                // Reset form
-                document.getElementById('m-nama').value = '';
-                document.getElementById('m-foto').value = '';
-                document.getElementById('m-lat').value = '';
-                document.getElementById('m-lng').value = '';
-                
-                load();
-                
-            } catch (err) {
-                showToast('❌ Gagal menyimpan: ' + err.message, 'error');
-            } finally {
-                btn.classList.remove('btn-loading');
-            }
+    btn.classList.add('btn-loading');
+    try {
+        const params = new URLSearchParams({
+            action: 'add_merchant',
+            nama: n,
+            foto: f,
+            lat: la,
+            lng: ln,
+            kategori: 'makanan'
+        });
+        
+        console.log('Sending to:', `${API_URL}?${params.toString()}`); // DEBUG
+        
+        const res = await fetch(`${API_URL}?${params.toString()}`, {
+            method: 'POST', // GANTI KE POST!
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: params.toString()
+        });
+        
+        const result = await res.json();
+        console.log('Response:', result); // DEBUG
+        
+        if (!result.success) {
+            throw new Error(result.error || 'Unknown error');
         }
-
+        
+        showToast('✅ Merchant berhasil disimpan! ID: ' + result.id);
+        
+        // Reset form
+        document.getElementById('m-nama').value = '';
+        document.getElementById('m-foto').value = '';
+        document.getElementById('m-lat').value = '';
+        document.getElementById('m-lng').value = '';
+        
+        // Force reload dengan delay
+        setTimeout(() => {
+            console.log('Reloading data...'); // DEBUG
+            load();
+        }, 500);
+        
+    } catch (err) {
+        console.error('Error:', err); // DEBUG
+        showToast('❌ ' + err.message, 'error');
+    } finally {
+        btn.classList.remove('btn-loading');
+    }
+}
         async function upStat(id, s) {
             try {
                 const btn = event.target;
