@@ -23,66 +23,422 @@
     <style>
         .btn-loading { opacity: 0.7; pointer-events: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        .animate-slide-up { animation: slideUp 0.4s ease-out; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        .gradient-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+        
+        .gradient-accent {
+            background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -10px rgba(37, 99, 235, 0.15);
+        }
+        
+        .input-focus {
+            transition: all 0.3s ease;
+        }
+        
+        .input-focus:focus {
+            transform: scale(1.01);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+        
+        .btn-shine {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-shine::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(45deg);
+            animation: shine 0.8s ease-in-out infinite;
+            opacity: 0;
+        }
+        
+        .btn-shine:hover::after {
+            opacity: 1;
+        }
+        
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite linear;
+        }
+        
+        .merchant-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        
+        .status-badge {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .status-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .status-badge:hover::before {
+            left: 100%;
+        }
+        
+        /* Debug panel - hidden by default */
+        .debug-hidden { display: none !important; }
+        
+        /* Success pulse animation */
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .success-pulse {
+            animation: successPulse 0.3s ease-in-out;
+        }
     </style>
+<base target="_blank">
 </head>
-<body class="bg-slate-50 font-sans text-slate-900 pb-24">
-    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] transition-all duration-300 -translate-y-20 opacity-0">
-        <div class="bg-white shadow-xl border border-slate-100 px-6 py-3 rounded-2xl flex items-center gap-3">
-            <i id="toast-icon" class="fas fa-check-circle text-accent-500"></i>
-            <span id="toast-msg" class="text-sm font-semibold">Berhasil!</span>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-yellow-50 font-sans text-slate-900 min-h-screen pb-24">
+    
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float" style="animation-delay: 1.5s;"></div>
+    </div>
+
+    <!-- Debug Panel (Hidden by default - triple click header to show) -->
+    <div id="debug-panel" class="debug-hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white rounded-xl p-4 max-w-sm w-full mx-4 shadow-2xl border border-slate-700">
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-yellow-500 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-bug text-slate-900 text-xs"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h4 class="font-bold text-yellow-400 text-sm mb-1 flex items-center gap-2">
+                    Debug Mode
+                    <span class="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded">DEV ONLY</span>
+                </h4>
+                <p id="debug-msg" class="text-xs font-mono text-slate-300 break-all leading-relaxed"></p>
+                <div class="mt-3 flex gap-2">
+                    <button onclick="load()" class="text-xs bg-primary-600 hover:bg-primary-500 px-3 py-1.5 rounded transition-colors">
+                        <i class="fas fa-sync mr-1"></i>Reload
+                    </button>
+                    <button onclick="hideDebug()" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition-colors">
+                        <i class="fas fa-times mr-1"></i>Tutup
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 p-4">
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] transition-all duration-500 -translate-y-24 opacity-0">
+        <div class="glass-effect shadow-2xl border border-white/50 px-6 py-4 rounded-2xl flex items-center gap-3 min-w-[280px]">
+            <div id="toast-icon-container" class="w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-green-400 to-green-500 shadow-lg">
+                <i id="toast-icon" class="fas fa-check text-white text-sm"></i>
+            </div>
+            <div class="flex-1">
+                <span id="toast-msg" class="text-sm font-bold text-slate-800 block">Berhasil!</span>
+                <span id="toast-sub" class="text-xs text-slate-500">Operasi selesai</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Status Bar -->
+    <div id="conn-status" class="hidden bg-red-500 text-white text-center py-2 px-4 text-xs font-semibold fixed top-0 left-0 right-0 z-50">
+        <i class="fas fa-wifi-slash mr-2"></i>
+        Koneksi terputus - Periksa internet Anda
+    </div>
+
+    <!-- Header -->
+    <header class="glass-effect border-b border-white/50 sticky top-0 z-40 px-4 py-3 shadow-sm" ondblclick="toggleDebug()">
         <div class="max-w-xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-800 tracking-tighter text-primary-700">MojosariFood<span class="text-accent-500">ADMIN</span></h1>
-            <button onclick="load()" class="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
-                <i class="fas fa-sync-alt"></i>
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-blue-500/30 animate-float">
+                    <i class="fas fa-crown text-yellow-400 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-extrabold tracking-tight text-slate-800 leading-tight">MOJOSARI<span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-yellow-600">FOOD</span></h1>
+                    <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Admin Dashboard</p>
+                </div>
+            </div>
+            <button onclick="load()" class="group w-11 h-11 rounded-xl bg-white border border-slate-200 text-primary-600 flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 active:scale-95" title="Refresh Data">
+                <i class="fas fa-sync-alt group-hover:rotate-180 transition-transform duration-500"></i>
             </button>
         </div>
     </header>
 
-    <main class="max-w-xl mx-auto p-4 space-y-6">
-        <div class="flex gap-2 p-1 bg-white rounded-2xl shadow-sm border border-slate-200">
-            <button onclick="showTab('toko')" id="btn-toko" class="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all bg-primary-600 text-white">MERCHANT</button>
-            <button onclick="showTab('menu')" id="btn-menu" class="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-500">MENU</button>
-            <button onclick="showTab('set')" id="btn-set" class="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-500">SETTINGS</button>
+    <main class="max-w-xl mx-auto p-4 space-y-6 relative z-10 pt-2">
+        
+        <!-- Connection Success Indicator -->
+        <div id="conn-success" class="hidden bg-green-500 text-white text-center py-2 px-4 text-xs font-semibold rounded-xl shadow-lg shadow-green-500/30 mb-4 success-pulse">
+            <i class="fas fa-wifi mr-2"></i>
+            Terhubung ke server
         </div>
 
-        <div id="tab-toko" class="space-y-4">
-            <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-                <h2 class="font-bold flex items-center gap-2"><i class="fas fa-plus-circle text-primary-500"></i> Tambah Merchant</h2>
-                <input id="m-nama" type="text" placeholder="Nama Merchant" class="w-full bg-slate-50 border-none p-4 rounded-2xl text-sm focus:ring-2 focus:ring-primary-500">
-                <input id="m-foto" type="text" placeholder="URL Foto Banner" class="w-full bg-slate-50 border-none p-4 rounded-2xl text-sm">
-                <div class="flex gap-2">
-                    <input id="m-lat" type="text" placeholder="Lat" class="flex-1 bg-slate-100 p-4 rounded-2xl text-xs" readonly>
-                    <input id="m-lng" type="text" placeholder="Lng" class="flex-1 bg-slate-100 p-4 rounded-2xl text-xs" readonly>
-                    <button onclick="getGPS()" class="bg-primary-100 text-primary-600 px-4 rounded-2xl text-xs font-bold">GPS</button>
+        <!-- Loading State -->
+        <div id="loading-state" class="hidden py-12 text-center">
+            <div class="relative w-16 h-16 mx-auto mb-4">
+                <div class="absolute inset-0 rounded-full border-4 border-blue-100"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-primary-600 border-t-transparent animate-spin"></div>
+            </div>
+            <p class="text-sm font-medium text-slate-600">Memuat data...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="hidden py-12 text-center">
+            <div class="w-20 h-20 mx-auto bg-red-50 rounded-full flex items-center justify-center mb-4">
+                <i class="fas fa-exclamation-triangle text-red-400 text-3xl"></i>
+            </div>
+            <h3 class="font-bold text-slate-700 mb-2">Gagal Memuat Data</h3>
+            <p id="error-detail" class="text-sm text-slate-500 mb-4 px-8">Terjadi kesalahan saat mengambil data</p>
+            <button onclick="load()" class="gradient-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl transition-all">
+                <i class="fas fa-redo mr-2"></i>Coba Lagi
+            </button>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="bg-white/80 backdrop-blur-xl p-1.5 rounded-2xl shadow-lg shadow-slate-200/50 border border-white/60">
+            <div class="flex gap-1">
+                <button onclick="showTab('toko')" id="btn-toko" class="flex-1 py-3.5 rounded-xl text-xs font-bold transition-all duration-300 bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2">
+                    <i class="fas fa-store text-accent-400"></i>
+                    <span>MERCHANT</span>
+                </button>
+                <button onclick="showTab('menu')" id="btn-menu" class="flex-1 py-3.5 rounded-xl text-xs font-bold transition-all duration-300 text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2">
+                    <i class="fas fa-utensils"></i>
+                    <span>MENU</span>
+                </button>
+                <button onclick="showTab('set')" id="btn-set" class="flex-1 py-3.5 rounded-xl text-xs font-bold transition-all duration-300 text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2">
+                    <i class="fas fa-cog"></i>
+                    <span>SETTINGS</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab: Merchant -->
+        <div id="tab-toko" class="space-y-5 animate-slide-up">
+            <!-- Add Merchant Card -->
+            <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden card-hover">
+                <div class="bg-gradient-to-r from-primary-50 to-blue-50 px-5 py-4 border-b border-slate-100">
+                    <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
+                            <i class="fas fa-plus text-white text-xs"></i>
+                        </div>
+                        Tambah Merchant Baru
+                    </h2>
                 </div>
-                <button id="btn-save-m" onclick="addM()" class="w-full bg-primary-600 text-white py-4 rounded-2xl font-bold shadow-lg">Simpan Merchant</button>
+                <div class="p-5 space-y-4">
+                    <div class="space-y-4">
+                        <div class="relative">
+                            <input id="m-nama" type="text" placeholder=" " class="input-focus w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-sm focus:outline-none focus:border-primary-500 peer">
+                            <label class="absolute left-4 top-4 text-slate-400 text-sm transition-all duration-300 pointer-events-none peer-focus:-translate-y-7 peer-focus:text-xs peer-focus:text-primary-600 peer-not-placeholder-shown:-translate-y-7 peer-not-placeholder-shown:text-xs">Nama Merchant</label>
+                        </div>
+                        
+                        <div class="relative">
+                            <input id="m-foto" type="text" placeholder=" " class="input-focus w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-sm focus:outline-none focus:border-primary-500 peer">
+                            <label class="absolute left-4 top-4 text-slate-400 text-sm transition-all duration-300 pointer-events-none peer-focus:-translate-y-7 peer-focus:text-xs peer-focus:text-primary-600 peer-not-placeholder-shown:-translate-y-7 peer-not-placeholder-shown:text-xs">URL Foto Banner</label>
+                        </div>
+                        
+                        <div class="bg-gradient-to-r from-yellow-50 to-amber-50 p-4 rounded-2xl border border-yellow-200">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i class="fas fa-map-marker-alt text-accent-600"></i>
+                                <span class="text-xs font-bold text-slate-700">Lokasi GPS</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <div class="flex-1 relative">
+                                    <input id="m-lat" type="text" placeholder="Latitude" class="w-full bg-white border border-yellow-200 p-3 rounded-xl text-xs font-mono text-slate-600 focus:outline-none focus:border-accent-500" readonly>
+                                </div>
+                                <div class="flex-1 relative">
+                                    <input id="m-lng" type="text" placeholder="Longitude" class="w-full bg-white border border-yellow-200 p-3 rounded-xl text-xs font-mono text-slate-600 focus:outline-none focus:border-accent-500" readonly>
+                                </div>
+                                <button onclick="getGPS()" class="gradient-accent text-slate-800 px-4 rounded-xl text-xs font-bold shadow-lg shadow-yellow-500/30 hover:shadow-xl hover:scale-105 transition-all active:scale-95 flex items-center gap-1">
+                                    <i class="fas fa-location-arrow"></i>
+                                    <span>GPS</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-save-m" onclick="addM()" class="btn-shine w-full gradient-primary text-white py-4 rounded-2xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i>
+                        <span>Simpan Merchant</span>
+                    </button>
+                </div>
             </div>
-            <div id="list-m" class="space-y-2"></div>
+
+            <!-- Merchant List -->
+            <div class="space-y-3">
+                <div class="flex items-center justify-between px-1">
+                    <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                        <i class="fas fa-list text-primary-500"></i>
+                        Daftar Merchant
+                    </h3>
+                    <span id="merchant-count" class="text-xs font-semibold bg-primary-100 text-primary-700 px-3 py-1 rounded-full">0 Merchant</span>
+                </div>
+                <div id="list-m" class="space-y-3"></div>
+            </div>
         </div>
 
-        <div id="tab-menu" class="hidden space-y-4">
-            <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-                <h2 class="font-bold flex items-center gap-2"><i class="fas fa-utensils text-primary-500"></i> Tambah Menu</h2>
-                <select id="sel-m" class="w-full bg-slate-50 border-none p-4 rounded-2xl text-sm"></select>
-                <input id="f-nama" type="text" placeholder="Nama Menu" class="w-full bg-slate-50 border-none p-4 rounded-2xl text-sm">
-                <input id="f-harga" type="number" placeholder="Harga" class="w-full bg-slate-50 border-none p-4 rounded-2xl text-sm">
-                <input id="f-foto" type="text" placeholder="URL Foto Menu" class="w-full bg-slate-50 border-none p-4 rounded-2xl text-sm">
-                <textarea id="f-desc" placeholder="Deskripsi" class="w-full bg-slate-50 border-none p-4 rounded-2xl text-sm h-24"></textarea>
-                <button id="btn-save-f" onclick="addF()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-bold">Simpan Menu</button>
+        <!-- Tab: Menu -->
+        <div id="tab-menu" class="hidden space-y-5 animate-slide-up">
+            <!-- Add Menu Card -->
+            <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden card-hover">
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 px-5 py-4 border-b border-slate-100">
+                    <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center">
+                            <i class="fas fa-plus text-white text-xs"></i>
+                        </div>
+                        Tambah Menu Baru
+                    </h2>
+                </div>
+                <div class="p-5 space-y-4">
+                    <div class="relative">
+                        <select id="sel-m" class="input-focus w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-sm focus:outline-none focus:border-green-500 appearance-none cursor-pointer">
+                            <option value="">Pilih Merchant</option>
+                        </select>
+                        <i class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                    </div>
+                    
+                    <div class="relative">
+                        <input id="f-nama" type="text" placeholder=" " class="input-focus w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-sm focus:outline-none focus:border-green-500 peer">
+                        <label class="absolute left-4 top-4 text-slate-400 text-sm transition-all duration-300 pointer-events-none peer-focus:-translate-y-7 peer-focus:text-xs peer-focus:text-green-600 peer-not-placeholder-shown:-translate-y-7 peer-not-placeholder-shown:text-xs">Nama Menu</label>
+                    </div>
+                    
+                    <div class="relative">
+                        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Rp</div>
+                        <input id="f-harga" type="number" placeholder=" " class="input-focus w-full bg-slate-50 border-2 border-slate-100 p-4 pl-10 rounded-2xl text-sm focus:outline-none focus:border-green-500 peer">
+                        <label class="absolute left-10 top-4 text-slate-400 text-sm transition-all duration-300 pointer-events-none peer-focus:-translate-y-7 peer-focus:text-xs peer-focus:text-green-600 peer-not-placeholder-shown:-translate-y-7 peer-not-placeholder-shown:text-xs">Harga</label>
+                    </div>
+                    
+                    <div class="relative">
+                        <input id="f-foto" type="text" placeholder=" " class="input-focus w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-sm focus:outline-none focus:border-green-500 peer">
+                        <label class="absolute left-4 top-4 text-slate-400 text-sm transition-all duration-300 pointer-events-none peer-focus:-translate-y-7 peer-focus:text-xs peer-focus:text-green-600 peer-not-placeholder-shown:-translate-y-7 peer-not-placeholder-shown:text-xs">URL Foto Menu</label>
+                    </div>
+                    
+                    <div class="relative">
+                        <textarea id="f-desc" placeholder=" " class="input-focus w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-sm h-28 focus:outline-none focus:border-green-500 peer resize-none"></textarea>
+                        <label class="absolute left-4 top-4 text-slate-400 text-sm transition-all duration-300 pointer-events-none peer-focus:-translate-y-7 peer-focus:text-xs peer-focus:text-green-600 peer-not-placeholder-shown:-translate-y-7 peer-not-placeholder-shown:text-xs">Deskripsi Menu</label>
+                    </div>
+                    
+                    <button id="btn-save-f" onclick="addF()" class="btn-shine w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-500/30 hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Simpan Menu</span>
+                    </button>
+                </div>
             </div>
-            <div id="list-f" class="space-y-2 text-xs text-slate-400 text-center py-4 italic">Data menu akan muncul setelah merchant dipilih.</div>
+
+            <!-- Menu List -->
+            <div id="list-f" class="text-center py-8">
+                <div class="w-20 h-20 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                    <i class="fas fa-utensils text-slate-300 text-2xl"></i>
+                </div>
+                <p class="text-sm text-slate-400 font-medium">Pilih merchant untuk melihat menu</p>
+            </div>
         </div>
 
-        <div id="tab-set" class="hidden space-y-4">
-            <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-                <h2 class="font-bold">Informasi Pembayaran</h2>
-                <input id="s-ew" type="text" placeholder="Nomor E-Wallet" class="w-full bg-slate-50 border-none p-4 rounded-2xl text-sm">
-                <input id="s-qr" type="text" placeholder="URL QRIS" class="w-full bg-slate-50 border-none p-4 rounded-2xl text-sm">
-                <button id="btn-save-s" onclick="saveS()" class="w-full bg-primary-600 text-white py-4 rounded-2xl font-bold">Update Settings</button>
+        <!-- Tab: Settings -->
+        <div id="tab-set" class="hidden space-y-5 animate-slide-up">
+            <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden card-hover">
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 px-5 py-4 border-b border-slate-100">
+                    <h2 class="font-bold text-slate-800 flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                            <i class="fas fa-credit-card text-white text-xs"></i>
+                        </div>
+                        Informasi Pembayaran
+                    </h2>
+                </div>
+                <div class="p-5 space-y-4">
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-2xl border border-blue-100">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
+                                <i class="fas fa-wallet text-white text-xs"></i>
+                            </div>
+                            <span class="text-xs font-bold text-slate-700">E-Wallet</span>
+                        </div>
+                        <input id="s-ew" type="text" placeholder="Masukkan nomor e-wallet" class="input-focus w-full bg-white border border-blue-200 p-4 rounded-xl text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-2xl border border-yellow-200">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                                <i class="fas fa-qrcode text-white text-xs"></i>
+                            </div>
+                            <span class="text-xs font-bold text-slate-700">QRIS Payment</span>
+                        </div>
+                        <input id="s-qr" type="text" placeholder="URL QRIS" class="input-focus w-full bg-white border border-yellow-200 p-4 rounded-xl text-sm focus:outline-none focus:border-yellow-500">
+                    </div>
+                    
+                    <button id="btn-save-s" onclick="saveS()" class="btn-shine w-full bg-gradient-to-r from-primary-600 to-purple-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-purple-500/30 hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-save"></i>
+                        <span>Update Settings</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-4 rounded-2xl shadow-md border border-slate-100 text-center">
+                    <div class="w-10 h-10 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                        <i class="fas fa-store text-blue-600"></i>
+                    </div>
+                    <div id="stat-merchant" class="text-xl font-bold text-slate-800">0</div>
+                    <div class="text-xs text-slate-500">Total Merchant</div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-md border border-slate-100 text-center">
+                    <div class="w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-2">
+                        <i class="fas fa-utensils text-green-600"></i>
+                    </div>
+                    <div id="stat-menu" class="text-xl font-bold text-slate-800">0</div>
+                    <div class="text-xs text-slate-500">Total Menu</div>
+                </div>
             </div>
         </div>
     </main>
@@ -91,42 +447,181 @@
         const API_URL = 'https://script.google.com/macros/s/AKfycbwj8iA4DbT4UTm6J2OM5fTkNnrhivXyiGA8PTgPQbAekcacT2mkG1I3cYEjnA6_Kk92vQ/exec';
         let merchants = [];
         let menus = [];
+        let debugMode = false;
 
         window.onload = load;
 
+        // Debug functions - double click header to toggle
+        function toggleDebug() {
+            debugMode = !debugMode;
+            const panel = document.getElementById('debug-panel');
+            if (debugMode) {
+                panel.classList.remove('debug-hidden');
+                updateDebugInfo('Debug mode aktif. Klik Reload untuk melihat data terbaru.');
+            } else {
+                panel.classList.add('debug-hidden');
+            }
+        }
+
+        function hideDebug() {
+            debugMode = false;
+            document.getElementById('debug-panel').classList.add('debug-hidden');
+        }
+
+        function updateDebugInfo(msg) {
+            document.getElementById('debug-msg').textContent = msg;
+        }
+
+        function showLoading() {
+            document.getElementById('loading-state').classList.remove('hidden');
+            document.getElementById('error-state').classList.add('hidden');
+            document.getElementById('conn-success').classList.add('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-state').classList.add('hidden');
+        }
+
+        function showError(message, detail = '') {
+            hideLoading();
+            document.getElementById('error-state').classList.remove('hidden');
+            document.getElementById('error-detail').textContent = detail || message;
+        }
+
+        function showSuccess() {
+            const success = document.getElementById('conn-success');
+            success.classList.remove('hidden');
+            setTimeout(() => success.classList.add('hidden'), 3000);
+        }
+
         async function load() {
+            showLoading();
+            
             try {
-                const res = await fetch(`${API_URL}?action=get_all`);
-                const data = await res.json();
+                if (!navigator.onLine) {
+                    throw new Error('OFFLINE');
+                }
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+                const res = await fetch(`${API_URL}?action=get_all`, {
+                    signal: controller.signal,
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                clearTimeout(timeoutId);
+
+                if (!res.ok) {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
+                const text = await res.text();
+                let data;
+                
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error('JSON_PARSE_ERROR');
+                }
+
+                // Update debug info if visible
+                if (debugMode) {
+                    updateDebugInfo(`✓ Success\nMerchants: ${data.merchants?.length || 0}\nMenus: ${data.menus?.length || 0}\nSettings: ${data.settings?.length || 0}\nTime: ${new Date().toLocaleTimeString()}`);
+                }
+
                 merchants = data.merchants || [];
                 menus = data.menus || [];
+                
+                hideLoading();
+                document.getElementById('error-state').classList.add('hidden');
+                showSuccess();
+                
                 renderMerchants();
                 renderSettings(data.settings);
-            } catch (e) { showToast('Gagal memuat data', 'error'); }
+                updateStats();
+                
+            } catch (e) {
+                console.error('Load error:', e);
+                
+                let errorMsg = 'Gagal memuat data';
+                let errorDetail = '';
+                
+                if (e.name === 'AbortError') {
+                    errorMsg = 'Request Timeout';
+                    errorDetail = 'Server terlalu lama merespons (>10 detik)';
+                } else if (e.message === 'OFFLINE') {
+                    errorMsg = 'Koneksi Internet Terputus';
+                    errorDetail = 'Periksa koneksi WiFi/data seluler';
+                    document.getElementById('conn-status').classList.remove('hidden');
+                } else if (e.message.includes('Failed to fetch')) {
+                    errorMsg = 'Tidak Dapat Terhubung';
+                    errorDetail = 'CORS error atau server tidak merespons';
+                } else if (e.message === 'JSON_PARSE_ERROR') {
+                    errorMsg = 'Format Data Salah';
+                    errorDetail = 'Response bukan format JSON yang valid';
+                } else {
+                    errorDetail = e.message;
+                }
+                
+                showError(errorMsg, errorDetail);
+                
+                if (debugMode) {
+                    updateDebugInfo(`✗ Error: ${errorMsg}\nDetail: ${errorDetail}\nTime: ${new Date().toLocaleTimeString()}`);
+                }
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('stat-merchant').textContent = merchants.length;
+            document.getElementById('stat-menu').textContent = menus.length;
+            document.getElementById('merchant-count').textContent = `${merchants.length} Merchant`;
         }
 
         function renderMerchants() {
             const list = document.getElementById('list-m');
             const sel = document.getElementById('sel-m');
             
-            list.innerHTML = merchants.map(m => `
-                <div class="bg-white p-4 rounded-2xl flex justify-between items-center border border-slate-100 shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <img src="${m.Foto}" class="w-10 h-10 rounded-full object-cover bg-slate-100">
-                        <div class="font-bold text-sm text-slate-700">${m.Nama}</div>
+            if (merchants.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-8 bg-white rounded-2xl border border-dashed border-slate-300">
+                        <div class="w-16 h-16 mx-auto bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                            <i class="fas fa-store-slash text-slate-300 text-xl"></i>
+                        </div>
+                        <p class="text-sm text-slate-400 font-medium">Belum ada merchant</p>
+                        <p class="text-xs text-slate-300 mt-1">Tambah merchant baru di atas</p>
                     </div>
-                    <button onclick="upStat('${m.ID}', '${m.Status === 'Buka' ? 'Tutup' : 'Buka'}')" 
-                        class="px-4 py-2 rounded-xl text-[10px] font-bold text-white transition-all ${m.Status==='Buka'?'bg-green-500':'bg-red-400'}">
-                        ${m.Status.toUpperCase()}
-                    </button>
-                </div>
-            `).join('');
+                `;
+            } else {
+                list.innerHTML = merchants.map((m, index) => `
+                    <div class="merchant-card p-4 rounded-2xl flex justify-between items-center shadow-sm hover:shadow-md transition-all duration-300 group" style="animation: slideUp 0.3s ease-out ${index * 0.1}s both;">
+                        <div class="flex items-center gap-4">
+                            <div class="relative">
+                                <img src="${m.Foto}" class="w-14 h-14 rounded-2xl object-cover bg-slate-100 shadow-inner" onerror="this.src='https://via.placeholder.com/56?text=MF'">
+                                <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full ${m.Status === 'Buka' ? 'bg-green-500' : 'bg-red-400'} border-2 border-white shadow-sm"></div>
+                            </div>
+                            <div>
+                                <div class="font-bold text-sm text-slate-800 group-hover:text-primary-600 transition-colors">${m.Nama}</div>
+                                <div class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                                    <i class="fas fa-map-pin text-accent-500"></i>
+                                    <span>${m.Lat ? String(m.Lat).substring(0, 8) : '-'}, ${m.Lng ? String(m.Lng).substring(0, 8) : '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="upStat('${m.ID}', '${m.Status === 'Buka' ? 'Tutup' : 'Buka'}')" 
+                            class="status-badge px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all duration-300 shadow-lg ${m.Status==='Buka'?'bg-gradient-to-r from-green-500 to-emerald-500 shadow-green-500/30':'bg-gradient-to-r from-red-400 to-rose-500 shadow-red-500/30'} hover:scale-105 active:scale-95 flex items-center gap-1.5">
+                            <i class="fas ${m.Status==='Buka'?'fa-door-open':'fa-door-closed'}"></i>
+                            <span>${m.Status.toUpperCase()}</span>
+                        </button>
+                    </div>
+                `).join('');
+            }
 
             sel.innerHTML = '<option value="">Pilih Merchant</option>' + merchants.map(m => `<option value="${m.ID}">${m.Nama}</option>`).join('');
         }
 
         function renderSettings(s) {
-            const set = s.reduce((acc, curr) => ({ ...acc, [curr.Key]: curr.Value }), {});
+            const set = s ? s.reduce((acc, curr) => ({ ...acc, [curr.Key]: curr.Value }), {}) : {};
             document.getElementById('s-ew').value = set.EWALLET || '';
             document.getElementById('s-qr').value = set.QRIS || '';
         }
@@ -134,83 +629,194 @@
         function showTab(t) {
             ['toko','menu','set'].forEach(x => {
                 document.getElementById('tab-'+x).classList.add('hidden');
-                document.getElementById('btn-'+x).classList.remove('bg-primary-600', 'text-white');
-                document.getElementById('btn-'+x).classList.add('text-slate-500');
+                const btn = document.getElementById('btn-'+x);
+                btn.classList.remove('bg-gradient-to-r', 'from-primary-600', 'to-primary-700', 'text-white', 'shadow-lg', 'shadow-blue-500/25');
+                btn.classList.add('text-slate-500', 'hover:bg-slate-50');
+                
+                const icon = btn.querySelector('i');
+                if (icon) icon.classList.remove('text-accent-400');
             });
+            
             document.getElementById('tab-'+t).classList.remove('hidden');
-            document.getElementById('btn-'+t).classList.add('bg-primary-600', 'text-white');
+            const activeBtn = document.getElementById('btn-'+t);
+            activeBtn.classList.remove('text-slate-500', 'hover:bg-slate-50');
+            activeBtn.classList.add('bg-gradient-to-r', 'from-primary-600', 'to-primary-700', 'text-white', 'shadow-lg', 'shadow-blue-500/25');
+            
+            const activeIcon = activeBtn.querySelector('i');
+            if (activeIcon) activeIcon.classList.add('text-accent-400');
         }
 
         function getGPS() {
-            navigator.geolocation.getCurrentPosition(p => {
-                document.getElementById('m-lat').value = p.coords.latitude;
-                document.getElementById('m-lng').value = p.coords.longitude;
-            });
+            if (!navigator.geolocation) {
+                showToast('GPS tidak didukung di browser ini', 'error');
+                return;
+            }
+            
+            const btn = document.querySelector('button[onclick="getGPS()"]');
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            
+            navigator.geolocation.getCurrentPosition(
+                p => {
+                    document.getElementById('m-lat').value = p.coords.latitude;
+                    document.getElementById('m-lng').value = p.coords.longitude;
+                    showToast('Lokasi berhasil didapatkan!');
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                },
+                err => {
+                    let msg = 'Gagal mendapatkan lokasi';
+                    if (err.code === 1) msg = 'Izin lokasi ditolak';
+                    else if (err.code === 2) msg = 'Lokasi tidak tersedia';
+                    else if (err.code === 3) msg = 'Timeout mendapatkan lokasi';
+                    showToast(msg, 'error');
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                },
+                { timeout: 10000, enableHighAccuracy: true }
+            );
         }
 
         async function addM() {
+            const nama = document.getElementById('m-nama').value.trim();
+            if (!nama) {
+                showToast('Nama merchant wajib diisi!', 'error');
+                document.getElementById('m-nama').focus();
+                return;
+            }
+            
             const btn = document.getElementById('btn-save-m');
             const params = new URLSearchParams({
                 action: 'add_merchant',
-                nama: document.getElementById('m-nama').value,
+                nama: nama,
                 foto: document.getElementById('m-foto').value,
                 lat: document.getElementById('m-lat').value,
                 lng: document.getElementById('m-lng').value
             });
+            
             btn.classList.add('btn-loading');
             try {
-                await fetch(`${API_URL}?${params.toString()}`);
-                showToast('Merchant disimpan!');
+                const res = await fetch(`${API_URL}?${params.toString()}`);
+                if (!res.ok) throw new Error('Failed to save');
+                
+                showToast('Merchant berhasil disimpan!');
+                document.getElementById('m-nama').value = '';
+                document.getElementById('m-foto').value = '';
+                document.getElementById('m-lat').value = '';
+                document.getElementById('m-lng').value = '';
                 load();
-            } catch (e) { showToast('Gagal simpan', 'error'); }
+            } catch (e) { 
+                showToast('Gagal simpan: ' + e.message, 'error'); 
+            }
             finally { btn.classList.remove('btn-loading'); }
         }
 
         async function addF() {
+            const mId = document.getElementById('sel-m').value;
+            const nama = document.getElementById('f-nama').value.trim();
+            
+            if(!mId) {
+                showToast('Pilih merchant terlebih dahulu!', 'error');
+                document.getElementById('sel-m').focus();
+                return;
+            }
+            if (!nama) {
+                showToast('Nama menu wajib diisi!', 'error');
+                document.getElementById('f-nama').focus();
+                return;
+            }
+            
             const btn = document.getElementById('btn-save-f');
             const params = new URLSearchParams({
                 action: 'add_menu',
-                mId: document.getElementById('sel-m').value,
-                nama: document.getElementById('f-nama').value,
+                mId: mId,
+                nama: nama,
                 harga: document.getElementById('f-harga').value,
                 foto: document.getElementById('f-foto').value,
                 desc: document.getElementById('f-desc').value
             });
-            if(!document.getElementById('sel-m').value) return showToast('Pilih merchant!', 'error');
             
             btn.classList.add('btn-loading');
             try {
-                await fetch(`${API_URL}?${params.toString()}`);
-                showToast('Menu ditambahkan!');
+                const res = await fetch(`${API_URL}?${params.toString()}`);
+                if (!res.ok) throw new Error('Failed to add menu');
+                
+                showToast('Menu berhasil ditambahkan!');
                 document.getElementById('f-nama').value = '';
                 document.getElementById('f-harga').value = '';
+                document.getElementById('f-foto').value = '';
+                document.getElementById('f-desc').value = '';
                 load();
-            } catch (e) { showToast('Gagal tambah menu', 'error'); }
+            } catch (e) { 
+                showToast('Gagal tambah menu: ' + e.message, 'error'); 
+            }
             finally { btn.classList.remove('btn-loading'); }
         }
 
         async function upStat(id, s) {
-            await fetch(`${API_URL}?action=update_status&id=${id}&status=${s}`);
-            load();
+            try {
+                const res = await fetch(`${API_URL}?action=update_status&id=${id}&status=${s}`);
+                if (!res.ok) throw new Error('Failed to update');
+                load();
+            } catch (e) {
+                showToast('Gagal update status', 'error');
+            }
         }
 
         async function saveS() {
+            const btn = document.getElementById('btn-save-s');
             const params = new URLSearchParams({
                 action: 'save_settings',
                 ew: document.getElementById('s-ew').value,
                 qr: document.getElementById('s-qr').value
             });
-            await fetch(`${API_URL}?${params.toString()}`);
-            showToast('Settings diupdate!');
+            
+            btn.classList.add('btn-loading');
+            try {
+                const res = await fetch(`${API_URL}?${params.toString()}`);
+                if (!res.ok) throw new Error('Failed to save settings');
+                showToast('Settings berhasil diupdate!');
+            } catch (e) { 
+                showToast('Gagal update settings', 'error'); 
+            }
+            finally { btn.classList.remove('btn-loading'); }
         }
 
         function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = msg;
-            document.getElementById('toast-icon').className = type === 'success' ? 'fas fa-check-circle text-accent-500' : 'fas fa-exclamation-circle text-red-500';
-            toast.classList.remove('-translate-y-20', 'opacity-0');
-            setTimeout(() => toast.classList.add('-translate-y-20', 'opacity-0'), 3000);
+            const iconContainer = document.getElementById('toast-icon-container');
+            const icon = document.getElementById('toast-icon');
+            const msgEl = document.getElementById('toast-msg');
+            const subEl = document.getElementById('toast-sub');
+            
+            msgEl.innerText = msg;
+            
+            if (type === 'success') {
+                iconContainer.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-green-400 to-green-500 shadow-lg';
+                icon.className = 'fas fa-check text-white text-sm';
+                subEl.textContent = 'Operasi berhasil';
+            } else {
+                iconContainer.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-red-400 to-red-500 shadow-lg';
+                icon.className = 'fas fa-exclamation text-white text-sm';
+                subEl.textContent = 'Terjadi kesalahan';
+            }
+            
+            toast.classList.remove('-translate-y-24', 'opacity-0');
+            setTimeout(() => toast.classList.add('-translate-y-24', 'opacity-0'), 3000);
         }
+
+        // Network status listeners
+        window.addEventListener('online', () => {
+            document.getElementById('conn-status').classList.add('hidden');
+            showToast('Koneksi internet kembali', 'success');
+            load();
+        });
+        
+        window.addEventListener('offline', () => {
+            document.getElementById('conn-status').classList.remove('hidden');
+            showToast('Koneksi internet terputus', 'error');
+        });
     </script>
 </body>
 </html>
